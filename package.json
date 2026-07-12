@@ -1,0 +1,15 @@
+{
+  "name": "interview-prep",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Full-stack + LLM/agentic/RAG interview-prep bootcamp (pnpm workspace).",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:server": "pnpm --filter server dev",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}
