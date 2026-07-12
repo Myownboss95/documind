@@ -1,55 +1,107 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { randomUUID } from 'node:crypto';
 import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
+import { ExtractionService, SUPPORTED_MIME_TYPES } from './extraction.service';
+import { STORAGE, type StorageAdapter } from '../storage/storage.interface';
+
+// Max upload size — reject bigger files at the interceptor before buffering more.
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
 
 /**
- * DOCUMENTS CONTROLLER  (Stage 1 · ① — the HTTP layer)
- * ----------------------------------------------------
- * @Controller('documents') sets the ROUTE PREFIX, so every method below lives
- * under /documents. Nest reads these decorators at startup and registers the
- * routes for you (no manual app.use() like Express).
- *
- *   @Get()        -> GET  /documents
- *   @Get(':id')   -> GET  /documents/:id
- *   @Post()       -> POST /documents
- *
- * DEPENDENCY INJECTION (the important bit):
- * The constructor asks for a DocumentsService. We never `new` it — Nest sees the
- * type, finds the provider in the DI container, and injects the SAME shared
- * instance. That's why state (our in-memory array) persists across requests, and
- * why we can swap the service for a fake in tests. (Laravel: type-hinting a
- * dependency in the constructor and letting the container resolve it.)
- *
- * `private readonly` is shorthand: TypeScript auto-creates and assigns
- * `this.documentsService` from the parameter. One line instead of boilerplate.
+ * DOCUMENTS CONTROLLER  (Stage 1 · HTTP layer, + file-upload stage)
+ * ----------------------------------------------------------------
+ * Routes live under /documents. The GLOBAL JwtAuthGuard (Stage 2) protects every
+ * route here — including /documents/upload — so a valid access token is required.
  */
-// No @UseGuards here anymore: the GLOBAL JwtAuthGuard (Stage 2 ②) protects every
-// route by default. A valid access token is required to reach any handler below.
-// This is "secure by default" — new routes are auto-protected.
 @Controller('documents')
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(
+    private readonly documentsService: DocumentsService,
+    private readonly extraction: ExtractionService,
+    @Inject(STORAGE) private readonly storage: StorageAdapter,
+  ) {}
 
-  // GET /documents -> list documents. Protected by the global JWT guard now; a
-  // valid token is required to reach here. (Stage 3 scopes results by user.)
   @Get()
   findAll() {
     return this.documentsService.findAll();
   }
 
-  // GET /documents/:id -> one document. ParseUUIDPipe validates the param IS a
-  // UUID before the handler runs -> a malformed id is a clean 400, never reaching
-  // the service. (Laravel: Route::get('/documents/{id}')->whereUuid('id').)
-  // If the id is a valid UUID but no such doc exists, the service throws 404.
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.documentsService.findOne(id);
   }
 
-  // POST /documents -> create. @Body() gives us the parsed JSON body as a DTO.
-  // Nest returns 201 for @Post by default. (Validation of the body: sub-step ④.)
+  // POST /documents -> create from JSON (existing flow; enqueues ingest).
   @Post()
   create(@Body() dto: CreateDocumentDto) {
     return this.documentsService.create(dto);
+  }
+
+  /**
+   * POST /documents/upload  (multipart/form-data)
+   * ---------------------------------------------
+   * Accepts a real file (PDF / DOCX / TXT / MD) + optional `title` field:
+   *   1. validate size + mime (reject unsupported early)
+   *   2. store the raw bytes via the swappable STORAGE adapter -> a uri
+   *   3. EXTRACT plain text from the bytes (pdf-parse / mammoth / utf-8)
+   *   4. reuse DocumentsService.create({ content: text }) — which persists the doc
+   *      and ENQUEUES the existing BullMQ ingest job (chunk -> embed -> pgvector).
+   *
+   * We deliberately DON'T re-implement ingestion here: extraction just produces the
+   * `content` string the existing pipeline already knows how to chunk + embed.
+   *
+   * FileInterceptor('file') buffers the field named `file` into memory (file.buffer)
+   * via multer. `limits.fileSize` caps the upload so a huge file is rejected before
+   * we buffer all of it. Requires auth (NOT @Public).
+   */
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_UPLOAD_BYTES } }),
+  )
+  async upload(
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body('title') title?: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException("missing file (send multipart field 'file')");
+    }
+
+    const mimeType = file.mimetype;
+    if (!SUPPORTED_MIME_TYPES.includes(mimeType as (typeof SUPPORTED_MIME_TYPES)[number])) {
+      throw new BadRequestException(
+        `unsupported file type '${mimeType}'. Allowed: ${SUPPORTED_MIME_TYPES.join(', ')}`,
+      );
+    }
+
+    // Namespaced, collision-proof key: documents/<uuid>-<original name>.
+    const safeName = file.originalname.replace(/[^\w.\-]+/g, '_');
+    const key = `documents/${randomUUID()}-${safeName}`;
+
+    // 1) store the raw bytes -> uri (local:// today, s3:// when STORAGE_DRIVER=s3).
+    const uri = await this.storage.put(key, file.buffer, mimeType);
+
+    // 2) extract text from the same bytes.
+    const content = await this.extraction.extract(file.buffer, mimeType, file.originalname);
+
+    // 3) reuse the existing create flow (persist + enqueue ingest). Returns status 'pending'.
+    return this.documentsService.create({
+      title: title?.trim() || file.originalname,
+      sourceUri: uri,
+      mimeType,
+      content,
+    });
   }
 }

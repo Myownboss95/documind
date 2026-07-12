@@ -12,6 +12,7 @@ import { EmbeddingModule } from './llm/embeddings/embedding.module';
 import { RagModule } from './rag/rag.module';
 import { AgentModule } from './agent/agent.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { StorageModule } from './storage/storage.module';
 import { DocumentEntity } from './documents/document.entity';
 import { ChunkEntity } from './documents/chunk.entity';
 import { UserEntity } from './users/user.entity';
@@ -62,6 +63,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
       }),
     }),
     RedisModule,
+    StorageModule,
     EmbeddingModule,
     DocumentsModule,
     AuthModule,

@@ -5,6 +5,7 @@ import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
 import { IngestProcessor } from './ingest.processor';
 import { ChunkingService } from './chunking.service';
+import { ExtractionService } from './extraction.service';
 import { DocumentEntity } from './document.entity';
 import { ChunkEntity } from './chunk.entity';
 import { INGEST_DLQ, INGEST_QUEUE } from './ingest.constants';
@@ -22,7 +23,7 @@ import { INGEST_DLQ, INGEST_QUEUE } from './ingest.constants';
     BullModule.registerQueue({ name: INGEST_QUEUE }, { name: INGEST_DLQ }),
   ],
   controllers: [DocumentsController],
-  providers: [DocumentsService, IngestProcessor, ChunkingService],
+  providers: [DocumentsService, IngestProcessor, ChunkingService, ExtractionService],
   exports: [ChunkingService],
 })
 export class DocumentsModule {}
