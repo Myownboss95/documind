@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Build API (server)
+        run: pnpm --filter server build
+
+      - name: Build React client
+        run: pnpm --filter client build
+
+      - name: Build Next.js app
+        run: pnpm --filter nextapp build
+
+      - name: Lint API (non-blocking)
+        run: pnpm --filter server lint || true

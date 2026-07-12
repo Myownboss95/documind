@@ -1,0 +1,69 @@
+# DocuMind — full local stack (Stage 7). `docker compose up --build`.
+# Postgres+pgvector + Redis + API (runs migrations on boot) + React SPA + Next.js app.
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: documind
+      POSTGRES_USER: documind
+      POSTGRES_PASSWORD: documind
+    # Host port 5433 (not 5432) so it doesn't clash with a local Postgres. Services
+    # inside the compose network still reach it at postgres:5432.
+    ports: ['5433:5432']
+    volumes: ['pgdata:/var/lib/postgresql/data']
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U documind']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    image: redis:7
+    ports: ['6380:6379'] # host 6380 to avoid clashing with a local Redis
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    environment:
+      PORT: '4000'
+      DATABASE_HOST: postgres
+      DATABASE_PORT: '5432'
+      DATABASE_USER: documind
+      DATABASE_PASSWORD: documind
+      DATABASE_NAME: documind
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      RUN_MIGRATIONS: 'true'
+      MODE: offline
+      JWT_ACCESS_SECRET: change-me-access
+      JWT_REFRESH_SECRET: change-me-refresh
+    ports: ['4000:4000']
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    ports: ['5173:80']
+    depends_on: ['server']
+
+  nextapp:
+    build:
+      context: .
+      dockerfile: nextapp/Dockerfile
+    environment:
+      API_URL: 'http://server:4000' # server-side fetches (internal network)
+      NEXT_PUBLIC_API_URL: 'http://localhost:4000' # browser-side (host-mapped)
+    ports: ['3000:3000']
+    depends_on: ['server']
+
+volumes:
+  pgdata:

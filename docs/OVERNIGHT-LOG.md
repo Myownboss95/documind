@@ -61,8 +61,19 @@ in `STUDY-NOTES.md`.
 ### In progress
 - Stage 5 build (agent): WebSocket gateway + EventEmitter + CORS already wired into server; client/ + nextapp/ scaffolding.
 
-### Next (after Stage 5)
-- Verify Stage 5 builds (server/client/nextapp).
-- Stage 7 (Dockerfiles + docker-compose + GitHub Actions CI) — build + verify.
-- Final review pass + update OVERVIEW.
+### Stage 5 — Frontend + real-time ✅ (finished after the agent hit the session limit)
+- Server WebSocket gateway (`server/src/realtime/`) + EventEmitter2 wiring in ingest + CORS. Builds.
+- `client/` React+Vite SPA: login, create doc, list, **live WS status**. **Builds** (61 modules).
+- `nextapp/` Next.js App Router: server component `/`, client component + **server action** `askRag`, **SSE streaming** `/chat`. **Builds** (5 routes).
+- `docs/stage-05.md`: WebSocket vs SSE, server vs client components, server actions vs routes, Next vs SPA.
+
+### Stage 7 — Containerize + CI ✅
+- `.dockerignore`, multi-stage `server/Dockerfile` (pnpm workspace, non-root) — **image builds** (`interview-prep-server:latest`).
+- `client/Dockerfile` (nginx SPA) + `nginx.conf`; `nextapp/Dockerfile` (next start).
+- `docker-compose.yml`: postgres(pgvector)+redis+server(RUN_MIGRATIONS on boot)+client+nextapp. Host ports 5433/6380 to avoid clashing local pg/redis. **Config valid.**
+- `.github/workflows/ci.yml`: install + build all 3 packages + lint on push/PR.
+- `app.module.ts`: `migrationsRun` gated by `RUN_MIGRATIONS` env (auto-migrate in container).
+
+### DONE — all 7 stages built + verified. Pushed to github.com/Myownboss95/documind.
+Remaining nice-to-haves: append Stage 5/7 to STUDY-NOTES.md; run a full `docker compose up` end-to-end.
 

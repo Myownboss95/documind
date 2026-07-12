@@ -1,0 +1,37 @@
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: #f6f7f9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 2rem; }
+#root { max-width: 720px; margin: 0 auto; }
+h1, h2 { margin: 0.5rem 0; }
+input, textarea, button {
+  font: inherit;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #cbd2d9;
+  border-radius: 6px;
+  margin: 0.25rem 0;
+}
+button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin: 0.75rem 0;
+}
+.status { font-weight: 600; }
+.status.ready { color: #16a34a; }
+.status.pending, .status.ingesting { color: #d97706; }
+.status.failed { color: #dc2626; }
+.error { color: #dc2626; }
+label { display: block; font-size: 0.85rem; color: #52606d; }

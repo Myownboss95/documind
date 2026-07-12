@@ -55,6 +55,9 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
         entities: [DocumentEntity, ChunkEntity, UserEntity],
         synchronize: false, // OFF — schema now managed by migration files (prod rule)
         migrations: ['dist/migrations/*.js'], // compiled migrations the app can run
+        // In containers (Stage 7) set RUN_MIGRATIONS=true to auto-apply pending
+        // migrations on boot. Locally we run them manually via `pnpm migration:run`.
+        migrationsRun: config.get<string>('RUN_MIGRATIONS') === 'true',
         logging: ['error', 'warn'],
       }),
     }),

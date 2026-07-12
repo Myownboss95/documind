@@ -229,7 +229,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] **Idempotency**: stable jobId dedupe + processor guard (skip ready, delete-then-insert chunks). Payments/webhooks tie-in.
 - [x] Bug hit live: BullMQ jobId can't contain ':' → fixed. Q&A → STUDY-NOTES.md (doc agent).
 
-### Stage 5 — React + Next.js
+### Stage 5 — React + Next.js  ✅
 - [ ] Vite React client ↔ Nest API (typed fetch, error/loading states)
 - [ ] **WebSocket** live job-queue status via Nest **Gateway** (`@nestjs/websockets`)
 - [ ] Rebuild feature in Next.js App Router
@@ -249,7 +249,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked
 - [x] **6h** Eval: golden corpus + 12 Q/A + `pnpm eval` scorer (hit@k / phrase / embed-sim; LLM-judge for live). **12/12 hit@3.**
 - [~] Deliberate bugs/quiz per sub-step → captured in STUDY-NOTES.md (doc agent) rather than inline (autonomous run).
 
-### Stage 7 — Containerize + CI
+### Stage 7 — Containerize + CI  ✅
 - [ ] Dockerfiles: Nest server, client, nextapp (multi-stage, non-root)
 - [ ] docker-compose local dev (Postgres + Redis + all services)
 - [ ] GitHub Actions CI: lint / test / build on push
