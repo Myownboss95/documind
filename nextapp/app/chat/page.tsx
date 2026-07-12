@@ -4,10 +4,9 @@ import { useState } from 'react';
 import { PUBLIC_API_URL } from '../lib/api';
 
 /**
- * STREAMING CHAT (Stage 5) — a client component consuming the API's SSE endpoint
- * via the browser's EventSource. Tokens render progressively as they arrive — the
- * same pattern you use for streaming LLM output (low time-to-first-token). SSE is
- * one-way server→client, which is all a token stream needs (vs a WebSocket).
+ * STREAMING CHAT (Stage 5) — a client component consuming the API's SSE endpoint via
+ * the browser's EventSource. Tokens render progressively as they arrive (low
+ * time-to-first-token) — the same pattern for streaming LLM output.
  */
 export default function ChatPage() {
   const [q, setQ] = useState('Explain vector similarity search');
@@ -39,20 +38,22 @@ export default function ChatPage() {
   }
 
   return (
-    <main>
+    <>
+      <span className="eyebrow">Client component · SSE</span>
       <h1>Streaming chat</h1>
-      <p>
-        <b>Client component</b> streaming tokens over <b>SSE</b> (EventSource) — they appear as
-        they’re generated.
+      <p className="lead">
+        Tokens stream over <b>Server-Sent Events</b> and render as they’re generated —
+        one-way server→client, all a token stream needs.
       </p>
-      <input value={q} onChange={(e) => setQ(e.target.value)} style={{ width: '70%' }} />
-      <button onClick={run} disabled={streaming}>
-        {streaming ? 'streaming…' : 'Stream'}
-      </button>
-      <pre className="card">{out || '(tokens will appear here)'}</pre>
-      <p>
-        <a href="/">← home</a>
-      </p>
-    </main>
+      <div className="field">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask something…" />
+        <button onClick={run} disabled={streaming}>
+          {streaming ? 'Streaming…' : 'Stream'}
+        </button>
+      </div>
+      <div className="card">
+        <pre className={out ? undefined : 'stream-empty'}>{out || 'Tokens will appear here…'}</pre>
+      </div>
+    </>
   );
 }

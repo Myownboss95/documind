@@ -4,9 +4,8 @@ import { useState } from 'react';
 import { askRag, type RagResult } from '../actions';
 
 /**
- * CLIENT COMPONENT (Stage 5) — 'use client' opts into browser interactivity
- * (useState, onClick). It calls the SERVER ACTION `askRag` directly — no fetch,
- * no API route on the client side. Next handles the RPC.
+ * CLIENT COMPONENT (Stage 5) — 'use client' opts into interactivity. It calls the
+ * SERVER ACTION `askRag` directly (RPC-style) — no fetch, no client-side API route.
  */
 export default function AskForm() {
   const [q, setQ] = useState('How do retried jobs stay safe?');
@@ -22,15 +21,16 @@ export default function AskForm() {
 
   return (
     <form onSubmit={onSubmit}>
-      <input value={q} onChange={(e) => setQ(e.target.value)} style={{ width: '70%' }} />
-      <button disabled={loading || !q}>{loading ? '…' : 'Ask'}</button>
+      <div className="field">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask about your docs…" />
+        <button disabled={loading || !q}>{loading ? 'Thinking…' : 'Ask'}</button>
+      </div>
       {ans && (
-        <div className="card">
-          <b>Answer:</b> {ans.answer}
-          <br />
-          <small>
-            {ans.citations.length} citations · provider: {ans.provider}
-          </small>
+        <div className="card answer">
+          {ans.answer}
+          <div className="meta">
+            {ans.citations.length} citation{ans.citations.length === 1 ? '' : 's'} · provider: {ans.provider}
+          </div>
         </div>
       )}
     </form>

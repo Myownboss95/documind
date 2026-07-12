@@ -9,7 +9,21 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ maxWidth: 760, margin: '2rem auto', padding: '0 1rem' }}>{children}</body>
+      <body>
+        <nav className="nav">
+          <div className="nav-inner">
+            <a href="/" className="brand">
+              <span className="logo" aria-hidden />
+              DocuMind
+            </a>
+            <div className="nav-links">
+              <a href="/">Search</a>
+              <a href="/chat">Chat</a>
+            </div>
+          </div>
+        </nav>
+        <main className="container">{children}</main>
+      </body>
     </html>
   );
 }
