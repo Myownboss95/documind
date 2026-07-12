@@ -41,10 +41,5 @@ cd ../nextapp && pnpm install && pnpm dev                       # Next app
 ```
 Go live: set `MODE=live` + `ANTHROPIC_API_KEY` (or `PROVIDER=openai` + `OPENAI_API_KEY`).
 
-## Docs
-- **[docs/OVERVIEW.md](docs/OVERVIEW.md)** — start here (map, endpoints, how to run, limitations)
-- **[docs/STUDY-NOTES.md](docs/STUDY-NOTES.md)** — deep file-by-file notes + interview Q&A
-- `docs/auth-interview.md`, `docs/llm-provider-tradeoffs.md`, `docs/stage-05.md`
-
 > Built stage-by-stage (Nest → Auth → Postgres → Redis → Frontend → RAG/Agent →
 > Containerize). See `PLAN.md`.

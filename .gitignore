@@ -26,3 +26,6 @@ pnpm-debug.log*
 
 # test / coverage
 coverage/
+
+# personal notes / study docs (kept local, not published)
+docs/
