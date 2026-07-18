@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
-    "start": "next start -p 3000",
+    "start": "next build -p 3000",
     "typecheck": "tsc --noEmit",
     "test": "echo \"[nextapp] no tests\" && exit 0"
   },

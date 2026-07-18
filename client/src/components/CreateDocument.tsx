@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../api';
 import type { DocumentDto } from '../types';
 
@@ -17,8 +17,10 @@ export function CreateDocument({
 }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -41,31 +43,75 @@ export function CreateDocument({
     }
   }
 
+  async function handleUpload(e: FormEvent) {
+    e.preventDefault();
+    if (!file) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const doc = await api.uploadDocument(token, file, title);
+      onCreated(doc);
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Upload failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <form className="card" onSubmit={handleSubmit}>
+    <div className="card">
       <h2>New document</h2>
-      <label>
-        Title
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Onboarding guide"
-          required
-        />
-      </label>
-      <label>
-        Body content
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Paste the document text to ingest…"
-          rows={6}
-        />
-      </label>
+      <form onSubmit={handleSubmit}>
+        <label>
+          Title
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Onboarding guide"
+            required
+          />
+        </label>
+        <label>
+          Body content
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Paste the document text to ingest…"
+            rows={6}
+          />
+        </label>
+        <button type="submit" disabled={loading || !title.trim()}>
+          {loading ? 'Creating…' : 'Create & ingest'}
+        </button>
+      </form>
+
+      <div className="or-divider">
+        <span>or</span>
+      </div>
+
+      <form onSubmit={handleUpload}>
+        <label>Upload a file</label>
+        <label className="file-drop">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+          <span className="file-drop-cta">Choose file</span>
+          <span className="file-drop-name">
+            {file ? file.name : 'No file selected'}
+          </span>
+        </label>
+        <p className="small muted file-hint">PDF, Word, TXT or MD · 10MB max</p>
+        <button type="submit" disabled={loading || !file}>
+          {loading ? 'Uploading…' : 'Upload & ingest'}
+        </button>
+      </form>
+
       {error && <p className="error">{error}</p>}
-      <button type="submit" disabled={loading || !title.trim()}>
-        {loading ? 'Creating…' : 'Create & ingest'}
-      </button>
-    </form>
+    </div>
   );
 }

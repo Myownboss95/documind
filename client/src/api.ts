@@ -69,4 +69,39 @@ export const api = {
       token,
       body: input,
     }),
+
+  /**
+   * Uploads a file as multipart/form-data. Unlike request(), we must NOT set a
+   * Content-Type header — the browser adds it with the multipart boundary.
+   */
+  uploadDocument: async (
+    token: string,
+    file: File,
+    title?: string,
+  ): Promise<DocumentDto> => {
+    const form = new FormData();
+    form.append('file', file);
+    if (title && title.trim()) form.append('title', title);
+
+    const res = await fetch(`${API_URL}/documents/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+
+    if (!res.ok) {
+      let msg = `Request failed (${res.status})`;
+      try {
+        const err = (await res.json()) as { message?: string; error?: string };
+        msg = err.message ?? err.error ?? msg;
+      } catch {
+        /* non-JSON error body — keep the default message */
+      }
+      throw new ApiError(msg, res.status);
+    }
+
+    const json = (await res.json()) as ApiEnvelope<DocumentDto>;
+    return json.data;
+  },
 };
